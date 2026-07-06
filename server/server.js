@@ -5,14 +5,27 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
 
 connectDB();
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: true,
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS blocked origin: ' + origin));
+  },
   credentials: true,
   methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
@@ -34,12 +47,25 @@ app.use('/api/tasks',         require('./routes/taskRoutes'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', message: 'ShadowVault API Running' }));
 
-// Serve React frontend in production
+// Serve frontend only if client build exists.
+// On Render (backend-only), client/dist does not exist — API-only mode.
 const clientDist = path.resolve(__dirname, '../client/dist');
-app.use(express.static(clientDist));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientDist, 'index.html'));
-});
+const clientIndex = path.join(clientDist, 'index.html');
+
+if (fs.existsSync(clientIndex)) {
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => {
+    res.sendFile(clientIndex);
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'ok',
+      message: 'ShadowVault API Running',
+      note: 'Frontend is deployed separately.',
+    });
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
