@@ -39,3 +39,4 @@ coverage/
 
 # Personal dev files
 scratch/
+client/.vite/
