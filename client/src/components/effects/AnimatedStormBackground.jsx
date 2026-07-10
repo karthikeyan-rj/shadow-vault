@@ -32,6 +32,7 @@ export default function AnimatedStormBackground({ variant = 'default' }) {
     let normalTimer = null;
     let burstTimer = null;
     let burstGapTimer = null;
+    let isPaused = false;
 
     const rainOpts = { opacityMul: cfg.rainOpacityMul, speedMul: cfg.rainSpeedMul };
 
@@ -185,6 +186,11 @@ export default function AnimatedStormBackground({ variant = 'default' }) {
     };
 
     const animate = () => {
+      if (isPaused) {
+        animId = requestAnimationFrame(animate);
+        return;
+      }
+
       clearCanvas(ctx, canvas.width, canvas.height);
       spawnWind = updateSpawnWind(spawnWind, spawnWindTarget, 0.01);
       updateRaindrops(dropsRef.current, canvas.width, canvas.height, spawnWind, rainOpts);
@@ -212,6 +218,19 @@ export default function AnimatedStormBackground({ variant = 'default' }) {
     };
     animate();
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isPaused = true;
+      } else {
+        isPaused = false;
+        if (activeBolts.length === 0) {
+          scheduleNormal();
+          scheduleBurst();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       cancelAnimationFrame(animId);
       clearTimeout(normalTimer);
@@ -219,6 +238,7 @@ export default function AnimatedStormBackground({ variant = 'default' }) {
       clearTimeout(burstGapTimer);
       clearTimeout(windTimer);
       window.removeEventListener('resize', setup);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [reduced, variant]);
 

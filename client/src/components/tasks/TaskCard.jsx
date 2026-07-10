@@ -1,7 +1,7 @@
 import React from 'react';
 import { fmtDate, fmt } from '../../utils/helpers';
 
-export default function TaskCard({ task, onToggle, onDelete, className = '' }) {
+const TaskCard = React.memo(function TaskCard({ task, onToggle, onDelete, className = '' }) {
   const isCompleted = task.status === 'completed';
   return (
     <div className={`glass-panel ${className}`} style={{
@@ -85,4 +85,6 @@ export default function TaskCard({ task, onToggle, onDelete, className = '' }) {
       </button>
     </div>
   );
-}
+});
+
+export default TaskCard;

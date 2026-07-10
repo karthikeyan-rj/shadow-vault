@@ -5,8 +5,15 @@ export function clearCanvas(ctx, w, h) {
 }
 
 export function resizeCanvas(canvas) {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
 }
 
 export function drawRain(ctx, drops) {
@@ -88,14 +95,21 @@ function drawBoltCore(ctx, points, alpha, isMobile, drawCfg, revealProgress = 1)
   const bp = drawCfg.blurPower;
 
   drawFullPathGlow(ctx, points, alpha,
-    (a) => `rgba(124, 58, 237, ${a * 0.18})`,
-    cfg.outerWidth * bp, cfg.outerBlur * bp,
-    (a) => `rgba(124, 58, 237, ${a * 0.4})`,
+    (a) => `rgba(80, 180, 255, ${a * 0.08})`,
+    cfg.hazeWidth * bp, cfg.hazeBlur * bp,
+    (a) => `rgba(80, 180, 255, ${a * 0.15})`,
     revealProgress
   );
 
   drawFullPathGlow(ctx, points, alpha,
-    (a) => `rgba(0, 234, 255, ${a * 0.50})`,
+    (a) => `rgba(124, 58, 237, ${a * 0.22})`,
+    cfg.outerWidth * bp, cfg.outerBlur * bp,
+    (a) => `rgba(124, 58, 237, ${a * 0.45})`,
+    revealProgress
+  );
+
+  drawFullPathGlow(ctx, points, alpha,
+    (a) => `rgba(0, 234, 255, ${a * 0.55})`,
     cfg.cyanWidth * bp, 0, null,
     revealProgress
   );
@@ -103,14 +117,14 @@ function drawBoltCore(ctx, points, alpha, isMobile, drawCfg, revealProgress = 1)
   drawSegmentedCore(ctx, points, alpha,
     (a) => `rgba(235, 252, 255, ${a * 0.95})`,
     cfg.coreWidth, cfg.coreBlur * bp,
-    (a) => `rgba(235, 252, 255, ${a * 0.3})`,
+    (a) => `rgba(235, 252, 255, ${a * 0.35})`,
     revealProgress
   );
 }
 
 const BOLT_CONFIG = {
-  mobile: { outerWidth: 7, outerBlur: 22, cyanWidth: 3, coreWidth: 1.1, coreBlur: 5 },
-  desktop: { outerWidth: 10, outerBlur: 35, cyanWidth: 4, coreWidth: 1.5, coreBlur: 8 },
+  mobile: { hazeWidth: 18, hazeBlur: 60, outerWidth: 7, outerBlur: 22, cyanWidth: 3, coreWidth: 1.1, coreBlur: 5 },
+  desktop: { hazeWidth: 26, hazeBlur: 90, outerWidth: 10, outerBlur: 35, cyanWidth: 4.5, coreWidth: 1.5, coreBlur: 8 },
 };
 
 const BRANCH_GLOW_CONFIG = {
@@ -129,6 +143,13 @@ function drawBranch(ctx, branch, alpha, isMobile, drawCfg, revealProgress = 1) {
   const cfg = BRANCH_GLOW_CONFIG[isMobile ? 'mobile' : 'desktop'];
   const bp = drawCfg.blurPower;
   const bgMul = drawCfg.branchGlowMul || 1;
+
+  drawFullPathGlow(ctx, branch.points, ba * 0.30,
+    (a) => `rgba(0, 180, 255, ${a * 0.12})`,
+    cfg.outerWidth * 2.5 * bp * bgMul, cfg.outerBlur * 2 * bp * bgMul,
+    (a) => `rgba(0, 180, 255, ${a * 0.20})`,
+    revealProgress
+  );
 
   drawFullPathGlow(ctx, branch.points, ba * 0.35,
     (a) => `rgba(124, 58, 237, ${a * 0.35})`,
@@ -175,15 +196,15 @@ function drawMicroBranch(ctx, branch, alpha, isMobile, drawCfg, revealProgress =
 }
 
 export function drawSkyCharge(ctx, startPos, progress, power, w, h) {
-  const alpha = Math.pow(Math.sin(progress * Math.PI * 0.5), 1.2) * 0.40 * power;
+  const alpha = Math.pow(Math.sin(progress * Math.PI * 0.5), 1.2) * 0.45 * power;
   const gradient = ctx.createRadialGradient(
     startPos.x, 0, 0,
     startPos.x, h * 0.12,
     Math.max(w, h) * 0.7
   );
   gradient.addColorStop(0, `rgba(180, 245, 255, ${alpha})`);
-  gradient.addColorStop(0.25, `rgba(0, 234, 255, ${alpha * 0.50})`);
-  gradient.addColorStop(0.55, `rgba(124, 58, 237, ${alpha * 0.28})`);
+  gradient.addColorStop(0.25, `rgba(0, 234, 255, ${alpha * 0.55})`);
+  gradient.addColorStop(0.55, `rgba(124, 58, 237, ${alpha * 0.30})`);
   gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
@@ -194,8 +215,8 @@ function drawDirectionalSkyGradient(ctx, event, skyAlpha, w, h) {
   const grad = ctx.createLinearGradient(startPos.x, startPos.y, endPos.x, endPos.y);
   grad.addColorStop(0, `rgba(180, 245, 255, ${skyAlpha})`);
   grad.addColorStop(0.2, `rgba(0, 234, 255, ${skyAlpha * 0.75})`);
-  grad.addColorStop(0.5, `rgba(80, 180, 255, ${skyAlpha * 0.45})`);
-  grad.addColorStop(0.75, `rgba(124, 58, 237, ${skyAlpha * 0.25})`);
+  grad.addColorStop(0.5, `rgba(80, 180, 255, ${skyAlpha * 0.50})`);
+  grad.addColorStop(0.75, `rgba(124, 58, 237, ${skyAlpha * 0.30})`);
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
@@ -220,10 +241,10 @@ export function drawCinematicPreGlow(ctx, event, progress, intensity, w, h) {
   const { device } = event;
   const isMobile = device === 'mobile';
   const eased = easeInOut(progress);
-  drawDirectionalSkyGradient(ctx, event, eased * intensity * 0.20, w, h);
-  ctx.fillStyle = `rgba(110, 210, 255, ${eased * intensity * 0.08})`;
+  drawDirectionalSkyGradient(ctx, event, eased * intensity * 0.22, w, h);
+  ctx.fillStyle = `rgba(110, 210, 255, ${eased * intensity * 0.10})`;
   ctx.fillRect(0, 0, w, h);
-  drawPathChargeGlow(ctx, event.points, Math.min(eased * intensity * 0.30, 0.35), isMobile);
+  drawPathChargeGlow(ctx, event.points, Math.min(eased * intensity * 0.35, 0.40), isMobile);
 }
 
 export function drawLightningBolt(ctx, event, alpha, drawCfg, revealProgress = 1, branchAlpha = 1) {
@@ -257,11 +278,11 @@ export function drawFlashWash(ctx, alpha, w, h, event, power = 1) {
   const maxDim = Math.max(w, h);
   const g = ctx.createRadialGradient(
     startPos.x, startPos.y, 0,
-    startPos.x, startPos.y, maxDim * 0.75
+    startPos.x, startPos.y, maxDim * 0.85
   );
   g.addColorStop(0, `rgba(190, 235, 255, ${alpha * power})`);
-  g.addColorStop(0.25, `rgba(140, 210, 255, ${alpha * power * 0.55})`);
-  g.addColorStop(0.55, `rgba(70, 180, 255, ${alpha * power * 0.22})`);
+  g.addColorStop(0.20, `rgba(140, 210, 255, ${alpha * power * 0.60})`);
+  g.addColorStop(0.50, `rgba(70, 180, 255, ${alpha * power * 0.25})`);
   g.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
@@ -276,11 +297,11 @@ export function drawStrikeIllumination(ctx, alpha, w, h, power = 1) {
 
 export function drawAfterGlow(ctx, endPos, progress, alpha, isMobile, blurPower = 1) {
   const fadeAlpha = (1 - progress) * alpha;
-  const baseR = isMobile ? 80 : 120;
+  const baseR = isMobile ? 100 : 150;
   const r = baseR * blurPower;
   const g = ctx.createRadialGradient(endPos.x, endPos.y, 0, endPos.x, endPos.y, r);
-  g.addColorStop(0, `rgba(0, 234, 255, ${fadeAlpha * 0.06})`);
-  g.addColorStop(0.6, `rgba(124, 58, 237, ${fadeAlpha * 0.03})`);
+  g.addColorStop(0, `rgba(0, 234, 255, ${fadeAlpha * 0.08})`);
+  g.addColorStop(0.5, `rgba(80, 180, 255, ${fadeAlpha * 0.05})`);
   g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g;
   ctx.fillRect(endPos.x - r, endPos.y - r, r * 2, r * 2);

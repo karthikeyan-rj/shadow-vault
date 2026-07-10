@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatCard({ label, value, icon, color, sub, glow, style, rank, className = '' }) {
+const StatCard = React.memo(function StatCard({ label, value, icon, color, sub, glow, style, rank, className = '' }) {
   return (
     <div
       className={className}
@@ -89,4 +89,6 @@ export default function StatCard({ label, value, icon, color, sub, glow, style, 
       </div>
     </div>
   );
-}
+});
+
+export default StatCard;
